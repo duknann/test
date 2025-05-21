@@ -1,0 +1,78 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+
+# --- 1. Đăng nhập/Đăng xuất ---
+- level: Metadata
+  omitStages:
+  - "RequestReceived"
+  resources:
+  - group: authentication.k8s.io
+    resources:
+    - tokenreviews
+
+- level: RequestResponse
+  omitStages:
+  - "RequestReceived"
+  resources:
+  - group: authorization.k8s.io
+    resources:
+    - subjectaccessreviews
+
+# --- 2. Thay đổi tài khoản/nhóm tài khoản (create/patch/delete users, groups) ---
+- level: RequestResponse
+  verbs: ["create", "update", "patch", "delete"]
+  resources:
+    - group: "user.openshift.io"
+      resources: ["users", "groups"]
+  omitStages:
+    - "RequestReceived"
+
+# --- 3. Phân quyền tài khoản hệ điều hành ---
+- level: RequestResponse
+  verbs: ["create", "update", "patch", "delete"]
+  resources:
+    - group: "rbac.authorization.k8s.io"
+      resources: ["rolebindings", "clusterrolebindings"]
+  omitStages:
+    - "RequestReceived"
+
+# --- 4. Thay đổi đồng hồ hệ thống ---
+- level: RequestResponse
+  verbs: ["patch", "update"]
+  resources:
+    - group: "config.openshift.io"
+      resources: ["clusterversions"]
+  omitStages:
+    - "RequestReceived"
+
+# --- 5. Tiến trình, dịch vụ ---
+- level: RequestResponse
+  verbs: ["create", "delete", "patch", "update"]
+  resources:
+    - group: ""
+      resources: ["pods", "deployments", "replicasets", "services", "daemonsets", "statefulsets", "jobs", "cronjobs"]
+  omitStages:
+    - "RequestReceived"
+
+# --- 6. Người dùng đặc quyền ---
+- level: RequestResponse
+  userGroups: ["system:cluster-admins", "system:masters"]
+  omitStages:
+    - "RequestReceived"
+
+# --- Ghi lại các request không nằm trong rule trên ---
+- level: Metadata
+  omitStages:
+    - "RequestReceived"
+
+# --- Loại bỏ log từ các user hệ thống ---
+- level: None
+  users:
+    - "system:kube-controller-manager"
+    - "system:kube-scheduler"
+    - "system:serviceaccount:kube-system:default"
+  userGroups:
+    - "system:nodes"
+    - "system:serviceaccounts"
+    - "system:serviceaccounts:kube-system"
