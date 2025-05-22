@@ -1,0 +1,20 @@
+mkdir -p ~/fake
+cat <<EOF > ~/fake/fake.kubeconfig
+apiVersion: v1
+kind: Config
+clusters:
+- name: fake-cluster
+  cluster:
+    server: https://10.118.201.80:6443
+    insecure-skip-tls-verify: true
+users:
+- name: fake-user
+  user:
+    token: FAKE_TOKEN
+contexts:
+- name: fake-context
+  context:
+    cluster: fake-cluster
+    user: fake-user
+current-context: fake-context
+EOF
